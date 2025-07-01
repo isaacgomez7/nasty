@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ video.title if video else 'Video Title' }} - NastyMood</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #0a0a0a; color: #e5e7eb; overflow-x: hidden;
+        }
+        .header-sticky {
+            position: sticky; top: 0; z-index: 50;
+            background-color: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid #2a2a2a;
+        }
+        .nav-container, .main-content, .footer-container {
+            max-width: 1280px; margin-left: auto; margin-right: auto;
+            padding-left: 1rem; padding-right: 1rem;
+        }
+        @media (min-width: 640px) { .nav-container, .main-content, .footer-container { padding-left: 1.5rem; padding-right: 1.5rem; } }
+        @media (min-width: 1024px) { .nav-container, .main-content, .footer-container { padding-left: 2rem; padding-right: 2rem; } }
+        .logo { color: #ef4444; } .logo:hover { color: #f87171; }
+        .search-input { background-color: #1f2937; border-color: #374151; color: #e5e7eb; }
+        .search-input:focus { border-color: #ef4444; --tw-ring-color: #ef4444; }
+        .search-btn { color: #ef4444; }
+        .nav-menu a { color: #d1d5db; }
+        .nav-menu a:hover, .nav-menu a.active { color: #ef4444; }
+        .nav-menu a.active::after { background-color: #ef4444; }
+        .video-player-container { background-color: #111827; border-radius: 0.75rem; border: 1px solid #374151; }
+        .video-title-main { color: #f9fafb; }
+        .video-iframe-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            background-color: #000;
+            border-radius: 0.5rem; 
+            overflow: hidden; 
+        }
+        .video-iframe, .video-js {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .video-details { color: #9ca3af; }
+        .action-btn { background-color: #374151; color: #e5e7eb; transition: background-color 0.2s ease; }
+        .action-btn:hover { background-color: #ef4444; color: #ffffff; }
+        .related-videos-section .section-title { color: #f9fafb; }
+        .video-card { background-color: #1f2937; border-radius: 0.75rem; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid #374151; }
+        .video-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.3), 0 0 15px rgba(239,68,68,0.3); border-color: #ef4444; }
+        .video-thumbnail-container { position: relative; width: 100%; padding-bottom: 56.25%; background-color: #111827; }
+        .video-thumbnail-container img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+        .video-card:hover .video-thumbnail-container img { transform: scale(1.05); }
+        .video-card-title { color: #f9fafb; }
+        .video-card-meta { color: #9ca3af; }
+        .back-to-home-btn { background-color: #374151; color: #e5e7eb; transition: background-color 0.2s ease; }
+        .back-to-home-btn:hover { background-color: #ef4444; color: #ffffff; }
+        .footer { background-color: #1f2937; border-top: 1px solid #374151; }
+        .ad-placeholder { background-color: #1f2937; border: 1px dashed #4b5563; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <header class="header-sticky py-3">
+        <div class="nav-container flex flex-wrap items-center justify-between">
+            <a href="{{ url_for('rutas.index') }}" class="logo text-3xl font-bold tracking-tight">NastyMood</a>
+            <div class="search-container w-full md:w-auto md:flex-1 md:max-w-lg my-2 md:my-0 md:mx-4 order-3 md:order-2">
+                <form method="GET" action="{{ url_for('rutas.index') }}" class="relative">
+                    <input type="text" name="search" class="search-input w-full py-2.5 px-4 pr-10 rounded-full text-sm" placeholder="Search videos..." value="{{ request.args.get('search', '') }}">
+                    <button type="submit" class="search-btn absolute right-3 top-1/2 transform -translate-y-1/2 text-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" /></svg>
+                    </button>
+                </form>
+            </div>
+            <nav class="order-2 md:order-3">
+                <ul class="nav-menu flex items-center space-x-3 md:space-x-5 text-sm">
+                    <li><a href="{{ url_for('rutas.index') }}">Home</a></li>
+                    <li><a href="{{ url_for('rutas.trending_videos', period='all') }}">Trending</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="ad-placeholder my-6 py-10 text-center text-sm nav-container">
+        Advertisement Space - Top
+    </div>
+
+    <main class="main-content py-6">
+        <a href="{{ url_for('rutas.index') }}" class="back-to-home-btn inline-block py-2 px-5 rounded-full text-sm font-medium mb-6">
+            &laquo; Back to Videos
+        </a>
+
+        <section class="video-player-container p-4 md:p-6 mb-8">
+            <h1 class="video-title-main text-xl md:text-2xl font-bold mb-4">{{ video.title if video else 'Video Title Not Available' }}</h1>
+            
+            <div class="video-iframe-wrapper" id="videoPlayerWrapper">
+                {% if video and video.embed_url %}
+                    {% set video_url = video.embed_url %}
+                    {# Solo mostrar iframe, nunca intentar video directo, porque solo guardamos sitios embebibles #}
+                    <iframe id="videoPlayerIframe" 
+                        src="{{ video.embed_url }}" 
+                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                        allowfullscreen="true"
+                        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation-by-user-activation"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        loading="lazy"
+                        onerror="handleVideoError(this)"
+                        title="{{ video.title }}">
+                    </iframe>
+                    <div id="videoFallback" class="hidden absolute inset-0 bg-black flex items-center justify-center text-white text-center p-4">
+                        <div class="max-w-md">
+                            <h3 class="text-lg font-semibold mb-2">Video Blocked or Not Available</h3>
+                            <p class="mb-4">This video might be blocked by your browser or network settings.</p>
+                            <button onclick="retryVideoLoad()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                                Retry Loading Video
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-center py-10 text-gray-400">Video not available.</p>
+                {% endif %}
+            </div>
+
+            <div class="video-details flex flex-wrap justify-between items-center mt-4 text-xs md:text-sm">
+                <div class="meta-info space-x-3">
+                    <span><strong>Source:</strong> {{ video.source if video else 'N/A' }}</span>
+                    <span><strong>Category:</strong> {{ video.category if video else 'N/A' }}</span>
+                    <span><strong>Added:</strong> {{ video.date_added.strftime('%b %d, %Y') if video and video.date_added else 'N/A' }}</span>
+                </div>
+                <div class="video-actions mt-3 md:mt-0 space-x-2">
+                    <button class="action-btn py-1.5 px-3 rounded-full" id="refreshPlayerBtn" title="Refresh Player">↻ Refresh</button>
+                    <button class="action-btn py-1.5 px-3 rounded-full" id="shareVideoBtn" title="Share Video">📤 Share</button>
+                </div>
+            </div>
+        </section>
+
+        <div class="ad-placeholder my-6 py-10 text-center text-sm nav-container">
+            Advertisement Space - Mid
+        </div>
+
+        {% if related_videos %}
+        <section class="related-videos-section mt-10">
+            <h2 class="section-title text-xl md:text-2xl font-bold mb-5">Related Videos</h2>
+            <div class="video-grid grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                {% for rel_video in related_videos %}
+                <article class="video-card group">
+                    <a href="{{ url_for('rutas.ver_video', video_id=rel_video.id) }}" class="block">
+                        <div class="video-thumbnail-container">
+                            <img src="{{ rel_video.thumbnail }}" alt="{{ rel_video.title }}" loading="lazy"
+                                 onerror="this.onerror=null;this.src='{{ url_for('static', filename='images/placeholder.png') }}';">
+                        </div>
+                        <div class="p-3 md:p-4">
+                            <h3 class="video-card-title text-sm font-semibold leading-tight h-10 overflow-hidden mb-1 group-hover:text-red-400 transition-colors">
+                                {{ rel_video.title|truncate(60) }}
+                            </h3>
+                            <p class="video-card-meta text-xs">
+                                <span class="font-medium">{{ rel_video.source }}</span> | <span>{{ rel_video.category }}</span>
+                            </p>
+                        </div>
+                    </a>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <div class="ad-placeholder my-6 py-10 text-center text-sm nav-container">
+        Advertisement Space - Bottom
+    </div>
+
+    <footer class="footer py-8 text-sm">
+        <div class="footer-container text-center text-gray-400">
+            <div class="mb-3">
+                <a href="{{ url_for('rutas.terms') }}" class="hover:text-red-400 px-2">Terms</a>|
+                <a href="{{ url_for('rutas.cookies') }}" class="hover:text-red-400 px-2">Cookies</a>|
+                <a href="{{ url_for('rutas.dmca') }}" class="hover:text-red-400 px-2">DMCA</a>
+            </div>
+            <p>&copy; {{ now.year }} NastyMood. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script>
+        function handleVideoError(iframe) {
+            const fallback = document.getElementById('videoFallback');
+            fallback.classList.remove('hidden');
+            iframe.style.display = 'none';
+        };
+
+        function retryVideoLoad() {
+            const iframe = document.getElementById('videoPlayerIframe');
+            const fallback = document.getElementById('videoFallback');
+            fallback.classList.add('hidden');
+            iframe.style.display = 'block';
+            iframe.src = iframe.src;
+        };
+
+        function refreshPlayer() {
+            const iframe = document.getElementById('videoPlayerIframe');
+            iframe.src = iframe.src;
+        };
+
+        function shareVideo() {
+            const url = window.location.href;
+            const title = document.title;
+            const shareData = {
+                title: title,
+                text: `Check out this video: ${title}`,
+                url: url
+            };
+            navigator.share(shareData)
+                .catch(console.error);
+        };
+
+        function copyVideoUrl() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url)
+                .then(() => {
+                    const copyButton = document.getElementById('copyButton');
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyButton.textContent = 'Copy URL';
+                    }, 2000);
+                })
+                .catch(console.error);
+        };
+
+        function togglePlayer() {
+            const iframe = document.getElementById('videoPlayerIframe');
+            const playerContainer = document.getElementById('playerContainer');
+            const toggleButton = document.getElementById('toggleButton');
+            const toggleIcon = toggleButton.querySelector('i');
+            
+            if (playerContainer.classList.contains('hidden')) {
+                playerContainer.classList.remove('hidden');
+                toggleIcon.className = 'fas fa-pause';
+            } else {
+                playerContainer.classList.add('hidden');
+                toggleIcon.className = 'fas fa-play';
+            }
+        };
+
+        function toggleFullscreen() {
+            const iframe = document.getElementById('videoPlayerIframe');
+            const playerContainer = document.getElementById('playerContainer');
+            
+            if (!document.fullscreenElement) {
+                playerContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        };
+
+        const refreshButton = document.getElementById('refreshPlayerBtn');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', function() {
+                const iframePlayer = document.getElementById('videoPlayerIframe');
+                const videoJsPlayerEl = document.getElementById('my-video-player');
+                const videoUrl = '{{ video.embed_url }}';
+
+                if (iframePlayer && iframePlayer.getAttribute('src')) {
+                    const currentSrc = iframePlayer.getAttribute('src');
+                    iframePlayer.setAttribute('src', ''); 
+                    setTimeout(() => { 
+                        iframePlayer.setAttribute('src', currentSrc); 
+                    }, 1000); 
+                } else if (videoJsPlayerEl) {
+                    const player = videojs.getPlayer('my-video-player');
+                    if (player) {
+                        player.reset(); 
+                        player.src({ 
+                            src: videoUrl, 
+                            type: videoUrl.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4' 
+                        });
+                        player.load();
+                        player.play().catch(function(error) {
+                            console.log('Playback failed:', error);
+                        });
+                    }
+                }
+            });
+        }
+
+        const shareButton = document.getElementById('shareVideoBtn');
+        if (shareButton) {
+            shareButton.addEventListener('click', function() {
+                const url = window.location.href;
+                const title = document.title;
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: title,
+                        text: `Check out this video: ${title}`,
+                        url: url
+                    }).catch(error => console.log('Error sharing:', error));
+                } else {
+                    navigator.clipboard.writeText(url).then(() => {
+                        alert('Link copied to clipboard!');
+                    }).catch(err => {
+                        console.error('Failed to copy link:', err);
+                    });
+                }
+            });
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/nastyplayer.js') }}"></script>
+</body>
+</html>
